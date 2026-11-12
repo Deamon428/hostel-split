@@ -1,0 +1,19 @@
+{
+  "name": "hostel-split",
+  "version": "1.0.0",
+  "description": "Zero-backend, client-side hostel expense splitter for Thapar University students with greedy min-cash-flow debt simplification and UPI deep linking.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "expense-splitter",
+    "upi",
+    "debt-simplification",
+    "min-cash-flow",
+    "thapar",
+    "hostel"
+  ],
+  "license": "MIT"
+}
+

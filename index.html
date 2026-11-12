@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+    />
+    <meta
+      name="description"
+      content="HostelSplit — Zero-backend, privacy-first hostel expense splitter for Thapar University students with O(N log N) debt simplification and instant UPI settlement links."
+    />
+    <title>HostelSplit — Campus &amp; Hostel Expense Simplifier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header Landmark -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-sm"
+            aria-hidden="true"
+          >
+            ₹
+          </div>
+          <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">HostelSplit</h1>
+            <p class="text-xs sm:text-sm text-slate-600">
+              Thapar Hostel &amp; Campus Expense Simplifier • 100% Client-Side
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            id="load-demo-btn"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 transition-colors"
+          >
+            Load Demo Data
+          </button>
+          <button
+            type="button"
+            id="reset-all-btn"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            Reset All
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Landmark -->
+    <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <!-- Group Total Summary Strip -->
+      <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading" class="sr-only">Group Expense Summary</h2>
+        <div
+          id="summary-strip"
+          aria-live="polite"
+          class="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Total Group Spend</p>
+            <p id="kpi-total-spend" class="mt-1 text-2xl font-bold text-slate-900">₹0.00</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Logged Expenses</p>
+            <p id="kpi-expense-count" class="mt-1 text-2xl font-bold text-slate-900">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Roommates</p>
+            <p id="kpi-member-count" class="mt-1 text-2xl font-bold text-slate-900">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Min. Transfers</p>
+            <p id="kpi-transfer-count" class="mt-1 text-2xl font-bold text-indigo-700">0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Workspace Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Left Column: Roster & Expense Entry -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Roommate Roster Section -->
+          <section
+            aria-labelledby="roster-heading"
+            class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 id="roster-heading" class="text-lg font-semibold text-slate-900">Roommate Roster</h2>
+                <p class="text-xs text-slate-600">Add hostel mates &amp; optional UPI IDs for one-tap settlement</p>
+              </div>
+            </div>
+
+            <form id="member-form" novalidate class="space-y-3">
+              <div>
+                <label for="member-name" class="block text-sm font-medium text-slate-700 mb-1">
+                  Roommate Name <span class="text-rose-700" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="member-name"
+                  name="name"
+                  type="text"
+                  required
+                  maxlength="60"
+                  autocomplete="off"
+                  placeholder="e.g. Aayush, Rohan, Kabir"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label for="member-upi" class="block text-sm font-medium text-slate-700 mb-1">
+                  UPI ID <span class="text-slate-500 font-normal">(optional)</span>
+                </label>
+                <input
+                  id="member-upi"
+                  name="upiId"
+                  type="text"
+                  maxlength="321"
+                  autocomplete="off"
+                  placeholder="e.g. aayush@okicici"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none"
+                />
+              </div>
+
+              <p
+                id="member-form-error"
+                role="alert"
+                class="hidden text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"
+              ></p>
+
+              <button
+                type="submit"
+                class="w-full py-2.5 px-4 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white text-sm font-semibold shadow-sm transition-colors"
+              >
+                Add Roommate
+              </button>
+            </form>
+
+            <div class="mt-5 pt-4 border-t border-slate-100">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                Current Group Members
+              </h3>
+              <ul id="member-list" class="space-y-2"></ul>
+              <p id="member-empty-state" class="text-sm text-slate-500 py-3 text-center">
+                No roommates yet. Add at least two roommates or load demo data to begin.
+              </p>
+            </div>
+          </section>
+
+          <!-- Log Expense Section -->
+          <section
+            aria-labelledby="expense-form-heading"
+            class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm"
+          >
+            <div class="mb-4">
+              <h2 id="expense-form-heading" class="text-lg font-semibold text-slate-900">Log Expense</h2>
+              <p class="text-xs text-slate-600">
+                Equal split with exact paise reconciliation — zero rounding drift
+              </p>
+            </div>
+
+            <form id="expense-form" novalidate class="space-y-3.5">
+              <div>
+                <label for="expense-title" class="block text-sm font-medium text-slate-700 mb-1">
+                  Expense Title <span class="text-rose-700" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="expense-title"
+                  name="title"
+                  type="text"
+                  required
+                  maxlength="120"
+                  autocomplete="off"
+                  placeholder="e.g. COS Night Canteen, Swiggy Pizza, Patiala Station Auto"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="expense-amount" class="block text-sm font-medium text-slate-700 mb-1">
+                    Amount (₹) <span class="text-rose-700" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="expense-amount"
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    placeholder="e.g. 450.00"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label for="expense-category" class="block text-sm font-medium text-slate-700 mb-1">
+                    Category
+                  </label>
+                  <select
+                    id="expense-category"
+                    name="category"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  >
+                    <option value="Food / Mess">Food / Mess</option>
+                    <option value="Travel / Auto">Travel / Auto</option>
+                    <option value="Groceries">Groceries</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label for="expense-payer" class="block text-sm font-medium text-slate-700 mb-1">
+                  Paid By <span class="text-rose-700" aria-hidden="true">*</span>
+                </label>
+                <select
+                  id="expense-payer"
+                  name="payerId"
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
+                ></select>
+              </div>
+
+              <fieldset class="border border-slate-200 rounded-xl p-3 bg-slate-50/70">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <legend class="text-sm font-medium text-slate-700 px-1">
+                    Split Equally Between <span class="text-rose-700" aria-hidden="true">*</span>
+                  </legend>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      id="select-all-participants-btn"
+                      class="text-xs font-medium text-indigo-700 hover:underline"
+                    >
+                      All
+                    </button>
+                    <span class="text-slate-300" aria-hidden="true">|</span>
+                    <button
+                      type="button"
+                      id="clear-participants-btn"
+                      class="text-xs font-medium text-slate-600 hover:underline"
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+                <div id="participants-checkboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                <p id="participants-empty-hint" class="text-xs text-slate-500 py-1">
+                  Add roommates above to select split participants.
+                </p>
+                <p id="split-preview-text" class="mt-2 text-xs font-medium text-slate-600"></p>
+              </fieldset>
+
+              <p
+                id="expense-form-error"
+                role="alert"
+                class="hidden text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"
+              ></p>
+
+              <button
+                type="submit"
+                id="add-expense-btn"
+                class="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm transition-colors"
+              >
+                Add Expense to Ledger
+              </button>
+            </form>
+          </section>
+        </div>
+
+        <!-- Right Column: Simplified Settlements & Expense Ledger -->
+        <div class="lg:col-span-7 space-y-6">
+          <!-- Simplified Settlements Section -->
+          <section
+            aria-labelledby="settlements-heading"
+            class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div>
+                <h2 id="settlements-heading" class="text-lg font-semibold text-slate-900">
+                  Simplified Settlements
+                </h2>
+                <p id="settlement-subtitle" class="text-xs text-slate-600">
+                  Greedy min-cash-flow transfers — minimum payments to settle the whole group
+                </p>
+              </div>
+              <button
+                type="button"
+                id="copy-summary-btn"
+                aria-label="Copy settlement summary for WhatsApp group sharing"
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 text-xs sm:text-sm font-semibold transition-colors"
+              >
+                Copy WhatsApp Summary
+              </button>
+            </div>
+
+            <div id="settlements-live-region" aria-live="polite" class="space-y-3">
+              <ul id="settlements-list" class="space-y-2.5"></ul>
+              <div
+                id="settlements-empty-state"
+                class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center"
+              >
+                <p class="text-sm font-medium text-slate-700">Everyone is settled up!</p>
+                <p class="text-xs text-slate-500 mt-1">
+                  Log shared canteen, Swiggy, or auto expenses to see the minimum required transfers.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Expense Ledger Section -->
+          <section
+            aria-labelledby="ledger-heading"
+            class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div>
+                <h2 id="ledger-heading" class="text-lg font-semibold text-slate-900">Expense Ledger</h2>
+                <p id="ledger-count-label" class="text-xs text-slate-600">Showing 0 expenses</p>
+              </div>
+            </div>
+
+            <!-- Debounced Search & Filter Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-4">
+              <div class="sm:col-span-7">
+                <label for="expense-search" class="block text-xs font-medium text-slate-700 mb-1">
+                  Search Expenses
+                </label>
+                <input
+                  id="expense-search"
+                  type="search"
+                  placeholder="Search by title, payer, or category..."
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none"
+                />
+              </div>
+              <div class="sm:col-span-5">
+                <label for="filter-category" class="block text-xs font-medium text-slate-700 mb-1">
+                  Filter Category
+                </label>
+                <select
+                  id="filter-category"
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
+                >
+                  <option value="ALL">All Categories</option>
+                  <option value="Food / Mess">Food / Mess</option>
+                  <option value="Travel / Auto">Travel / Auto</option>
+                  <option value="Groceries">Groceries</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <ul id="expense-list" class="space-y-3"></ul>
+            <div
+              id="expense-empty-state"
+              class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center"
+            >
+              <p class="text-sm font-medium text-slate-700">No expenses match your view</p>
+              <p class="text-xs text-slate-500 mt-1">
+                Add a new hostel expense on the left or clear your search filters.
+              </p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Landmark -->
+    <footer class="border-t border-slate-200 bg-white mt-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600">
+        <p>HostelSplit • Built for Thapar University hostel roommates &amp; campus groups</p>
+        <p>Zero-backend privacy: all data remains in browser localStorage</p>
+      </div>
+    </footer>
+
+    <!-- Accessible Confirmation Modal -->
+    <dialog
+      id="confirm-dialog"
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-message"
+      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl max-w-md w-[calc(100%-2rem)] mx-auto"
+    >
+      <h2 id="confirm-dialog-title" class="text-lg font-semibold text-slate-900">Confirm Action</h2>
+      <p id="confirm-dialog-message" class="mt-2 text-sm text-slate-600"></p>
+      <div class="mt-5 flex justify-end gap-2.5">
+        <button
+          type="button"
+          id="confirm-cancel-btn"
+          class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 text-sm font-medium"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="confirm-accept-btn"
+          class="px-4 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-sm font-semibold"
+        >
+          Confirm
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Polite Toast Notification Region -->
+    <div
+      id="toast-region"
+      aria-live="polite"
+      role="status"
+      class="fixed bottom-4 right-4 z-50 max-w-sm pointer-events-none"
+    >
+      <div
+        id="toast-box"
+        class="hidden pointer-events-auto rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium shadow-lg"
+      ></div>
+    </div>
+
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
+
